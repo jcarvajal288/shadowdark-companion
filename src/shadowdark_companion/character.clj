@@ -80,14 +80,17 @@
         :thief d4
         :wizard d4} cls))
 
+(defn- roll-ability-scores []
+  (let [abilities (map (fn [_] (roll-3d6)) (range 6))]
+    (if (>= (apply max abilities) 14)
+      abilities
+      (recur))))
+
 (defn generate-hp [cls ancestry con]
-  (let [hd (hit-die cls)
-        con-bonus (ability-mod con)
-        hp (if (= ancestry :dwarf)
-             (reduce + [(hd) (hd) con-bonus])
-             (reduce + [(hd) con-bonus]))
-        hp2 (if (< hp 1) 1 hp)]
-    (if (= ancestry :dwarf) (+ hp2 2) hp2)))
+  (let [hd (hit-die cls)]
+    (if (= ancestry :dwarf)
+      (+ (apply max [(hd) (hd)]) 2)
+      (hd))))
 
 (defn generate-name [ancestry]
   (cond
@@ -98,10 +101,13 @@
     (= ancestry :half-orc) (rand-nth half-orc-names)
     (= ancestry :human) (rand-nth human-names)))
 
+
+(defn determine-class [abilites])
+
 (defn roll-character []
-  (let [class (rand-nth classes)
+  (let [abilities (roll-ability-scores)
+        class (rand-nth classes)
         ancestry (generate-ancestry)
-        abilities (map (fn [_] (roll-3d6)) (range 6))
         hp (generate-hp class ancestry (nth abilities 2))]
     (->PlayerCharacter (generate-name ancestry)
                        (nth abilities 0)
