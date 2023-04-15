@@ -101,12 +101,30 @@
     (= ancestry :half-orc) (rand-nth half-orc-names)
     (= ancestry :human) (rand-nth human-names)))
 
+(defn indices-of-value [value coll]
+  (map first (filter
+               #(= (second %) value)
+               (map-indexed vector coll))))
 
-(defn determine-class [abilites])
+(defn determine-class [abilities]
+  (let [highest-three (take 3 (reverse (sort abilities)))
+        indices-of-highest-three (map #(indices-of-value % abilities) highest-three)
+        key-ability (->> indices-of-highest-three
+                         (flatten)
+                         (filter #(and (not= % 2) (not= % 5)))
+                         (first))]
+    (cond
+      (= key-ability 0) :fighter
+      (= key-ability 1) :thief   ; TODO: figure out a method for determining between thief and ranged fighter
+      (= key-ability 2) :fighter
+      (= key-ability 3) :wizard
+      (= key-ability 4) :priest
+      (= key-ability 5) :thief
+      :else (throw (Exception. (str "Invalid key-ability: " key-ability))))))
 
 (defn roll-character []
   (let [abilities (roll-ability-scores)
-        class (rand-nth classes)
+        class (determine-class abilities)
         ancestry (generate-ancestry)
         hp (generate-hp class ancestry (nth abilities 2))]
     (->PlayerCharacter (generate-name ancestry)
